@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Babá Eletrônica | Alerta de choro</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #121c2f;
+      --panel2: #18253b;
+      --border: #2a3952;
+      --text: #f4f7ff;
+      --muted: #a1aec3;
+      --accent: #aebcff;
+      --green: #67dfb1;
+      --red: #ff858c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; padding: 24px;
+      display: grid; place-items: center;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(116,137,255,.17), transparent 35rem),
+        radial-gradient(ellipse at 100% 100%, rgba(103,223,177,.07), transparent 30rem),
+        var(--bg);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button, input { font: inherit; }
+    .app { width: min(720px, 100%); }
+    .header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+    .logo {
+      width: 54px; height: 54px; display: grid; place-items: center; flex-shrink: 0;
+      border-radius: 18px; color: #121a2a; font-size: 29px;
+      background: linear-gradient(145deg, #d9dfff, #8fa5ff);
+      box-shadow: 0 8px 28px #728bff25;
+    }
+    .eyebrow { margin: 0 0 6px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .18em; }
+    h1 { margin: 0; font-size: clamp(23px, 5vw, 31px); letter-spacing: -.045em; }
+    .connection {
+      display: flex; align-items: center; gap: 8px; margin-left: auto;
+      border: 1px solid var(--border); border-radius: 999px; padding: 9px 12px;
+      color: var(--muted); font-size: 12px; white-space: nowrap;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .online { color: var(--green); border-color: #67dfb14a; background: #67dfb10d; }
+    .offline { color: var(--red); border-color: #ff858c4a; background: #ff858c0d; }
+    .card {
+      padding: clamp(22px, 5vw, 34px); border: 1px solid var(--border);
+      border-radius: 28px; background: linear-gradient(145deg, #17243a, #111a2b);
+      box-shadow: 0 24px 70px #0003;
+    }
+    .status-icon {
+      width: 86px; height: 86px; display: grid; place-items: center; margin: 0 auto 22px;
+      border: 1px solid #67dfb12b; border-radius: 27px;
+      color: var(--green); background: #67dfb111; font-size: 39px;
+      transition: .25s ease;
+    }
+    .status-icon.alert {
+      color: var(--red); border-color: #ff858c65; background: #ff858c17;
+      animation: pulse 1.2s infinite;
+    }
+    .status-copy { text-align: center; }
+    .status-copy h2 { margin: 0 0 10px; font-size: clamp(23px, 5vw, 30px); letter-spacing: -.04em; }
+    .status-copy p { max-width: 460px; margin: 0 auto; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .status-banner {
+      margin-top: 25px; padding: 15px 16px; border: 1px solid var(--border);
+      border-radius: 16px; background: #0c1424; display: flex; align-items: center; gap: 12px;
+    }
+    .banner-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; background: #aebcff18; color: var(--accent); font-size: 18px; }
+    .banner-text { flex: 1; min-width: 0; }
+    .banner-text strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    .banner-text span { display: block; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .time { color: var(--muted); font-size: 11px; text-align: right; }
+    .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .button {
+      border: 1px solid var(--border); border-radius: 13px; padding: 12px 16px;
+      color: var(--text); background: #1a2740; font-weight: 700; cursor: pointer;
+      transition: transform .15s ease, filter .15s ease;
+    }
+    .button:hover { transform: translateY(-1px); filter: brightness(1.12); }
+    .button-primary { color: #11182a; background: var(--accent); border-color: transparent; }
+    .footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; color: #7888a2; font-size: 11px; }
+    .modal {
+      width: min(420px, calc(100% - 24px)); padding: 27px; color: var(--text);
+      border: 1px solid var(--border); border-radius: 23px; background: var(--panel);
+      box-shadow: 0 20px 80px #0007;
+    }
+    .modal::backdrop { background: #030711c9; backdrop-filter: blur(6px); }
+    .modal h2 { margin: 0 0 9px; font-size: 24px; }
+    .modal p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    label { display: block; margin: 18px 0 8px; font-size: 12px; font-weight: 700; }
+    input { width: 100%; padding: 13px; border: 1px solid #354560; border-radius: 12px; outline: none; background: #0c1424; color: var(--text); }
+    input:focus { border-color: var(--accent); }
+    .modal .button { width: 100%; margin-top: 13px; }
+    .error { min-height: 16px; color: var(--red) !important; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 #ff858c00; } 50% { box-shadow: 0 0 0 12px #ff858c0d; } }
+    @media (max-width: 520px) {
+      body { padding: 14px; }
+      .header { flex-wrap: wrap; }
+      .connection { margin-left: 0; }
+      .card { border-radius: 22px; }
+      .status-banner { align-items: flex-start; }
+      .time { max-width: 100px; line-height: 1.5; }
+      .footer { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div class="logo" aria-hidden="true">♡</div>
+      <div>
+        <p class="eyebrow">MONITORAMENTO INFANTIL</p>
+        <h1>Babá Eletrônica</h1>
+      </div>
+      <div id="connection" class="connection">
+        <span class="dot"></span><span id="connectionText">Conectando…</span>
+      </div>
+    </header>
+
+    <section class="card" aria-live="polite">
+      <div id="statusIcon" class="status-icon" aria-hidden="true">✓</div>
+      <div class="status-copy">
+        <p class="eyebrow" id="statusEyebrow">STATUS DO MONITORAMENTO</p>
+        <h2 id="statusTitle">Aguardando alertas</h2>
+        <p id="statusMessage">Quando a Pico W detectar um som que ultrapasse os limites configurados, o alerta aparecerá aqui.</p>
+      </div>
+
+      <div class="status-banner">
+        <div id="bannerMark" class="banner-mark" aria-hidden="true">◷</div>
+        <div class="banner-text">
+          <strong id="eventTitle">Nenhum alerta recebido</strong>
+          <span id="eventMessage">O sistema está aguardando um evento.</span>
+        </div>
+        <div id="eventTime" class="time">—</div>
+      </div>
+
+      <div class="actions">
+        <button id="testButton" class="button button-primary" type="button">Testar som de alerta</button>
+        <button id="resetButton" class="button" type="button">Voltar ao estado normal</button>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Raspberry Pi Pico W · Alertas de som</span>
+      <span id="serverStatus">Conectando ao servidor seguro…</span>
+    </footer>
+  </main>
+
+  <dialog id="accessDialog" class="modal">
+    <form id="accessForm" method="dialog">
+      <p class="eyebrow">ACESSO PRIVADO</p>
+      <h2>Conectar ao monitor</h2>
+      <p>Digite o token do painel configurado no servidor. Ele será mantido nesta aba do navegador.</p>
+      <label for="accessToken">Token de acesso</label>
+      <input id="accessToken" type="password" required autocomplete="current-password" placeholder="Token do painel">
+      <p id="accessError" class="error" role="alert"></p>
+      <button class="button button-primary" type="submit">Conectar</button>
+    </form>
+  </dialog>
+
+  <!-- O backend existente serve Socket.IO nesta mesma origem. -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const dialog = $("accessDialog");
+      const form = $("accessForm");
+      const tokenInput = $("accessToken");
+      const error = $("accessError");
+      let token = sessionStorage.getItem("babaDashboardToken") || "";
+      let socket = null;
+
+      function connectionState(online, label) {
+        $("connection").classList.toggle("online", online);
+        $("connection").classList.toggle("offline", !online);
+        $("connectionText").textContent = label;
+      }
+
+      function formatTime(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Horário indisponível";
+        return new Intl.DateTimeFormat("pt-BR", {
+          dateStyle: "short", timeStyle: "medium"
+        }).format(date);
+      }
+
+      function showAlert(alert) {
+        $("statusIcon").classList.add("alert");
+        $("statusIcon").textContent = "!";
+        $("statusEyebrow").textContent = "ALERTA DE SOM";
+        $("statusTitle").textContent = "Possível choro detectado";
+        $("statusMessage").textContent = "A Pico W detectou um som acima do limite configurado. Verifique o bebê pessoalmente.";
+        $("bannerMark").textContent = "!";
+        $("eventTitle").textContent = "Alerta recebido";
+        $("eventMessage").textContent = alert.message || "Possível choro ou som persistente detectado.";
+        $("eventTime").textContent = formatTime(alert.timestamp || new Date().toISOString());
+        $("serverStatus").textContent = "Alerta recebido em tempo real";
+        document.title = "⚠ Alerta de choro | Babá Eletrônica";
+
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("Babá Eletrônica: possível choro", {
+            body: alert.message || "Verifique o bebê."
+          });
+        }
+      }
+
+      function resetStatus() {
+        $("statusIcon").classList.remove("alert");
+        $("statusIcon").textContent = "✓";
+        $("statusEyebrow").textContent = "STATUS DO MONITORAMENTO";
+        $("statusTitle").textContent = "Aguardando alertas";
+        $("statusMessage").textContent = "O painel está conectado e aguardando o próximo alerta da Pico W.";
+        $("bannerMark").textContent = "◷";
+        $("eventTitle").textContent = "Nenhum alerta ativo";
+        $("eventMessage").textContent = "O estado visual foi reiniciado. Isso não altera a detecção na Pico W.";
+        $("eventTime").textContent = "—";
+        document.title = "Babá Eletrônica | Alerta de choro";
+      }
+
+      function connect() {
+        if (!token) {
+          connectionState(false, "Acesso necessário");
+          dialog.showModal();
+          return;
+        }
+
+        if (socket) socket.disconnect();
+        socket = io({ auth: { token } });
+
+        socket.on("connect", () => {
+          connectionState(true, "Conectado");
+          $("serverStatus").textContent = "Conexão com o servidor ativa";
+          error.textContent = "";
+          if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission().catch(() => {});
+          }
+        });
+
+        socket.on("new_alert", (alert) => showAlert(alert));
+
+        socket.on("initial_state", (data) => {
+          const lastAlert = data && data.alerts && data.alerts[0];
+          if (lastAlert) showAlert(lastAlert);
+        });
+
+        socket.on("disconnect", () => {
+          connectionState(false, "Reconectando…");
+          $("serverStatus").textContent = "Conexão perdida; tentando reconectar";
+        });
+
+        socket.on("connect_error", (err) => {
+          connectionState(false, "Falha na conexão");
+          $("serverStatus").textContent = "Confira o servidor e o token";
+          if (err && err.message === "unauthorized") {
+            sessionStorage.removeItem("babaDashboardToken");
+            token = "";
+            socket.disconnect();
+            error.textContent = "Token incorreto. Confira e tente novamente.";
+            dialog.showModal();
+          }
+        });
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        token = tokenInput.value.trim();
+        if (!token) {
+          error.textContent = "Digite o token de acesso.";
+          return;
+        }
+        sessionStorage.setItem("babaDashboardToken", token);
+        dialog.close();
+        connect();
+      });
+
+      $("testButton").addEventListener("click", () => {
+        showAlert({
+          message: "Este é um teste visual. Nenhum som foi detectado pela Pico W.",
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      $("resetButton").addEventListener("click", resetStatus);
+      connect();
+    })();
+  </script>
+</body>
+</html>
